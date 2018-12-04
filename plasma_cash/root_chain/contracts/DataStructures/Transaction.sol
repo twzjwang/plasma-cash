@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.5.0;
 
 import 'ECRecovery.sol';
 import 'RLP.sol';
@@ -27,7 +27,7 @@ library Transaction {
 
     function createTx(bytes memory txBytes)
         internal
-        constant
+        view
         returns (Tx memory)
     {
         RLP.RLPItem[] memory txList = txBytes.toRLPItem().toList(TRANSACTION_LENGTH);

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.5.0;
 
 /**
 * @title RLPReader
@@ -30,7 +30,7 @@ library RLP {
 
     /* Encoder */
 
-    function encodeList(bytes[] memory self) internal constant returns (bytes) {
+    function encodeList(bytes[] memory self) internal view returns (bytes memory) {
         bytes memory list = _flatten(self);
         bytes memory encoded = _encode(list);
         return encoded;
@@ -40,7 +40,7 @@ library RLP {
 
     function next(Iterator memory self)
         internal
-        constant
+        view
         returns (RLPItem memory subItem)
     {
         uint ptr = self._unsafe_nextPtr;
@@ -50,7 +50,7 @@ library RLP {
         self._unsafe_nextPtr = ptr + itemLength;
     }
 
-    function hasNext(Iterator memory self) internal constant returns (bool) {
+    function hasNext(Iterator memory self) internal view returns (bool) {
         RLPItem memory item = self._unsafe_item;
         return self._unsafe_nextPtr < item._unsafe_memPtr + item._unsafe_length;
     }
@@ -62,7 +62,7 @@ library RLP {
     /// @return An RLPItem
     function toRLPItem(bytes memory self)
         internal
-        constant
+        view
         returns (RLPItem memory)
     {
         uint len = self.length;
@@ -78,7 +78,7 @@ library RLP {
     /// @return An 'Iterator' over the item.
     function iterator(RLPItem memory self)
         internal
-        constant
+        view
         returns (Iterator memory it)
     {
         uint ptr = self._unsafe_memPtr + _payloadOffset(self);
@@ -92,7 +92,7 @@ library RLP {
     /// @return Array of RLPItems.
     function toList(RLPItem memory self, uint256 numItems)
         internal
-        constant
+        view
         returns (RLPItem[] memory list)
     {
         list = new RLPItem[](numItems);
@@ -108,7 +108,7 @@ library RLP {
     /// RLPItem is a list.
     /// @param self The RLPItem.
     /// @return The decoded string.
-    function toUint(RLPItem memory self) internal constant returns (uint data) {
+    function toUint(RLPItem memory self) internal view returns (uint data) {
         uint rStartPos;
         uint len;
         (rStartPos, len) = _decode(self);
@@ -137,12 +137,12 @@ library RLP {
     /// @return The bytes.
     function toBytes(RLPItem memory self)
         internal
-        constant
+        view
         returns (bytes memory bts)
     {
         uint len = self._unsafe_length;
         if (len == 0)
-            return;
+            return bts;
         bts = new bytes(len);
         uint btsPtr;
         assembly {
@@ -157,7 +157,7 @@ library RLP {
     /// @return The decoded string.
     function toData(RLPItem memory self)
         internal
-        constant
+        view
         returns (bytes memory bts)
     {
         uint rStartPos;
@@ -233,7 +233,7 @@ library RLP {
         if (b0 < DATA_SHORT_START) {
             memPtr = start;
             len = 1;
-            return;
+            return (memPtr, len);
         }
         if (b0 < DATA_LONG_START) {
             len = self._unsafe_length - 1;
@@ -246,12 +246,12 @@ library RLP {
             len = self._unsafe_length - 1 - bLen;
             memPtr = start + bLen + 1;
         }
-        return;
+        return (memPtr, len);
     }
 
     function _encode(bytes memory self)
         private
-        constant
+        view
         returns (bytes memory bts)
     {
         uint selfPtr;
@@ -270,7 +270,7 @@ library RLP {
 
         if (len <= 55) {
             encoded = new bytes(len+1);
-            encoded[0] = byte(LIST_SHORT_START + len);
+            encoded[0] = byte(uint8(LIST_SHORT_START + len));
 
             assembly {
                 encodedPtr := add(encoded, 0x21)
@@ -278,10 +278,10 @@ library RLP {
             _memcpy(encodedPtr, selfPtr, len);
         } else {
             encoded = new bytes(1 + lenLen + len);
-            encoded[0] = byte(LIST_LONG_START + lenLen - 1);
+            encoded[0] = byte(uint8(LIST_LONG_START + lenLen - 1));
 
-		    for (i = 1; i <= lenLen; i++) {
-                encoded[i] = byte((len / (0x100**(lenLen - i))) % 0x100);
+		    for (uint i = 1; i <= lenLen; i++) {
+                encoded[i] = byte(uint8((len / (0x100**(lenLen - i))) % 0x100));
             }
 
             assembly {
@@ -292,7 +292,7 @@ library RLP {
         return encoded;
     }
 
-    function _flatten(bytes[] memory self) private constant returns (bytes) {
+    function _flatten(bytes[] memory self) private view returns (bytes memory) {
         uint len;
         for (uint i = 0; i < self.length; i++) {
             len += self[i].length;
@@ -304,7 +304,7 @@ library RLP {
             flattenedPtr := add(flattened, 0x20)
         }
 
-        for (i = 0; i < self.length; i++) {
+        for (uint i = 0; i < self.length; i++) {
             bytes memory item = self[i];
 
             uint selfPtr;
@@ -319,7 +319,7 @@ library RLP {
     }
 
     /// This function is from Nick Johnson's string utils library
-    function _memcpy(uint dest, uint src, uint len) private constant {
+    function _memcpy(uint dest, uint src, uint len) private view {
         // Copy word-length chunks while possible
         for(; len >= 32; len -= 32) {
             assembly {

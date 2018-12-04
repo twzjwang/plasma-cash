@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.5.0;
 
 import 'Challenge.sol';
 import 'merkle.sol';
@@ -33,7 +33,7 @@ contract RootChain {
         bytes exitTx;
         uint txBeforeExitTxBlkNum;
         bytes txBeforeExitTx;
-        address owner;
+        address payable owner;
     }
 
     struct funds {
@@ -67,8 +67,8 @@ contract RootChain {
         bytes32 blkRoot,
         uint blknum,
         bool isDepositBlock,
-        bytes depositTx,
-        bytes depositTxProof
+        bytes memory depositTx,
+        bytes memory depositTxProof
     )
         public
         isAuthority
@@ -98,7 +98,7 @@ contract RootChain {
         if (currency == address(0)) {
             require(amount * 10**18 == msg.value);
         }
-        uint uid = uint256(keccak256(currency, msg.sender, depositCount));
+        uint uid = uint256(keccak256(abi.encodePacked(currency, msg.sender, depositCount)));
         wallet[uid] = funds({
             hasValue: true,
             isConfirmed: false,
@@ -124,7 +124,7 @@ contract RootChain {
     // @param tx The transaction in bytes that user wants to exit
     // @param txProof The merkle proof of the tx
     // @param txBlkNum The block number of the tx
-    function startDepositExit(bytes tx, bytes txProof, uint txBlkNum) public {
+    function startDepositExit(bytes memory tx, bytes memory txProof, uint txBlkNum) public {
         Transaction.Tx memory txObj = tx.createTx();
         require(txObj.prevBlock == 0);
         require(msg.sender == txObj.newOwner);
@@ -154,11 +154,11 @@ contract RootChain {
     // @param txProof The merkle proof of the tx
     // @param txBlkNum The block number of the tx
     function startExit(
-        bytes prevTx,
-        bytes prevTxProof,
+        bytes memory prevTx,
+        bytes memory prevTxProof,
         uint prevTxBlkNum,
-        bytes tx,
-        bytes txProof,
+        bytes memory tx,
+        bytes memory txProof,
         uint txBlkNum
     )
         public
@@ -197,7 +197,7 @@ contract RootChain {
     // @param challengeTx The transaction in bytes that user wants to challenge the exit
     // @param proof The merkle proof of the challenge transaction
     // @param blkNum The block number of the challenge transaction
-    function challengeExit(uint uid, bytes challengeTx, bytes proof, uint blkNum) public {
+    function challengeExit(uint uid, bytes memory challengeTx, bytes memory proof, uint blkNum) public {
         require(exits[uid].hasValue);
 
         Transaction.Tx memory exitTxObj = (exits[uid].exitTx).createTx();
@@ -238,9 +238,9 @@ contract RootChain {
     // @param blkNum The block number of the respond transaction
     function respondChallengeExit(
         uint uid,
-        bytes challengeTx,
-        bytes respondTx,
-        bytes proof,
+        bytes memory challengeTx,
+        bytes memory respondTx,
+        bytes memory proof,
         uint blkNum
     )
         public
@@ -266,18 +266,18 @@ contract RootChain {
 
     // @dev Finalize an exit
     // @param uid The id to specify the exit transaction
-    function finalizeExit(uint uid) public {
+    function finalizeExit(uint uid) public payable {
         require(exits[uid].hasValue);
         require(now >= exits[uid].exitTime);
         for (uint i = 0; i < challenges[uid].length; i++) {
             require(!challenges[uid][i].hasValue);
         }
 
-        exits[uid].owner.transfer(wallet[uid].amount*10**18);
+        address(exits[uid].owner).transfer(wallet[uid].amount*10**18);
         delete exits[uid].hasValue;
     }
 
-    function isChallengeExisted(uint uid, bytes challengeTx) public returns (bool) {
+    function isChallengeExisted(uint uid, bytes memory challengeTx) public returns (bool) {
         return challenges[uid].contains(challengeTx);
     }
 }

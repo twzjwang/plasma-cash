@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.5.0;
 
 /**
 * @title Challenge
@@ -13,12 +13,12 @@ library Challenge {
         uint challengeTxBlkNum;
     }
 
-    function contains(challenge[] storage _array, bytes _challengeTx) internal returns (bool) {
+    function contains(challenge[] storage _array, bytes memory _challengeTx) internal returns (bool) {
         int index = _indexOf(_array, _challengeTx);
         return index != -1;
     }
 
-    function remove(challenge[] storage _array, bytes _challengeTx) internal returns (bool) {
+    function remove(challenge[] storage _array, bytes memory _challengeTx) internal returns (bool) {
         int index = _indexOf(_array, _challengeTx);
         if (index == -1) {
             return false;
@@ -31,7 +31,7 @@ library Challenge {
         return true;
     }
 
-    function _indexOf(challenge[] storage _array, bytes _challengeTx) private returns (int) {
+    function _indexOf(challenge[] storage _array, bytes memory _challengeTx) private returns (int) {
         for (uint i = 0; i < _array.length; i++) {
             bytes memory a = _array[i].challengeTx;
             bytes memory b = _challengeTx;
@@ -43,7 +43,7 @@ library Challenge {
         return -1;
     }
 
-    function compare(bytes _a, bytes _b) private pure returns (int) {
+    function compare(bytes memory _a, bytes memory _b) private pure returns (int) {
         uint minLength = _a.length;
         if (_b.length < minLength) {
             minLength = _b.length;

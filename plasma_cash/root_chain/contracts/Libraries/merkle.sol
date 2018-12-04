@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.5.0;
 
 library Merkle {
     /**
@@ -8,7 +8,7 @@ library Merkle {
      * @param rootHash The root of the merkle tree.
      * @param proof The proof of the leaf.
      */
-    function checkMembership(bytes32 leaf, uint256 index, bytes32 rootHash, bytes proof)
+    function checkMembership(bytes32 leaf, uint256 index, bytes32 rootHash, bytes memory proof)
         internal
         pure
         returns (bool)
@@ -21,9 +21,9 @@ library Merkle {
                 proofElement := mload(add(proof, i))
             }
             if (index % 2 == 0) {
-                computedHash = keccak256(computedHash, proofElement);
+                computedHash = keccak256(abi.encodePacked(computedHash, proofElement));
             } else {
-                computedHash = keccak256(proofElement, computedHash);
+                computedHash = keccak256(abi.encodePacked(proofElement, computedHash));
             }
             index = index / 2;
         }
