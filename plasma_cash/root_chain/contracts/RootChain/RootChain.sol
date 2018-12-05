@@ -18,7 +18,7 @@ contract RootChain {
     /*
      * Storage
      */
-    address public authority;
+    address [] public authority;
     uint public depositCount;
     uint public currentBlkNum;
     mapping(uint => bytes32) public childChain;
@@ -47,15 +47,23 @@ contract RootChain {
      * Modifiers
      */
     modifier isAuthority() {
-        require(msg.sender == authority);
+        bool checkExist = false;
+        for (uint i = 0; i < authority.length; i++) {
+            if (msg.sender == authority[i]) {
+                checkExist = true;
+                break;
+            }
+        }
+        if (!checkExist) {
+            require(false);
+        }
         _;
     }
-
 
     constructor ()
         public
     {
-        authority = msg.sender;
+        authority.push(msg.sender);
         depositCount = 0;
         currentBlkNum = 0;
     }
@@ -266,7 +274,7 @@ contract RootChain {
 
     // @dev Finalize an exit
     // @param uid The id to specify the exit transaction
-    function finalizeExit(uint uid) public payable {
+    function finalizeExit(uint uid) public {
         require(exits[uid].hasValue);
         require(now >= exits[uid].exitTime);
         for (uint i = 0; i < challenges[uid].length; i++) {
