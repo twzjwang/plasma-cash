@@ -21,6 +21,7 @@ contract RootChain {
     address [] public authority;
     uint public depositCount;
     uint public currentBlkNum;
+    uint public maxOperatorNum = 22;
     mapping(uint => bytes32) public childChain;
     mapping(uint => funds) public wallet;
     mapping(uint => exit) public exits;
@@ -66,6 +67,18 @@ contract RootChain {
         authority.push(msg.sender);
         depositCount = 0;
         currentBlkNum = 0;
+    }
+
+    // @dev Adds a new operator
+    // @param newOperator The address of new operator
+    function addOperator(
+        address newOperator
+    )
+        public
+        isAuthority
+    {
+        require(authority.length <= maxOperatorNum);
+        authority.push(newOperator);
     }
 
     // @dev Allows Plasma chain operator to submit block root
